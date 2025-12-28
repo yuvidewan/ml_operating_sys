@@ -1,21 +1,22 @@
 import sys
-from datetime import datetime
+import json
+from db.app_logger import log_app
+import unicodedata
+import time
 
 # # argv[0] is name of program parameters start from index 1
-# timestamp = float(sys.argv[1])
-# dt = datetime.fromtimestamp(timestamp) #conversion to datetime
+raw = sys.stdin.read()
+data = json.loads(raw)
+timestamp = time.time()
+processes = data["processes"]
 
-# print(f"recieved time : {dt}")
+cleaned_processes = []
+for p in processes:
+    p = unicodedata.normalize("NFKC", p).strip()
+    if p:
+        cleaned_processes.append(p)
 
+# print(cleaned_processes)   
+for p in cleaned_processes:
+    log_app(p,timestamp)
 
-from datetime import datetime
-from local_agent import get_open_apps
-from db.app_logger import log_app
-
-apps = get_open_apps()
-timestamp = datetime.now()
-
-for app in apps:
-    log_app(app, timestamp)
-
-print("Apps logged:", len(apps))
