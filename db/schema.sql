@@ -1,11 +1,15 @@
-CREATE TABLE app_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    app_name VARCHAR(255),
-    opened_at DOUBLE NOT NULL
+CREATE TABLE IF NOT EXISTS app_events (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    app_name VARCHAR(255) NOT NULL,
+    event_type ENUM('OPEN', 'CLOSE') NOT NULL,
+    ts DOUBLE NOT NULL
 );
 
-CREATE TABLE seq(
-    prev VARCHAR(255),
-    curr VARCHAR(255),
-    prev_closed boolean
-)
+CREATE TABLE IF NOT EXISTS app_sessions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    app_name VARCHAR(255) NOT NULL,
+    opened_at DOUBLE NOT NULL,
+    closed_at DOUBLE,
+    duration DOUBLE
+);
+
