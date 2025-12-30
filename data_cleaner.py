@@ -1,23 +1,28 @@
 from db.db_engine import get_connection
 
-ALLOW_LIST = {
-    "google",
-    "visual studio code",
-    "whatsapp"
+# canonical_name : substrings that may appear in real app_name
+APP_MAP = {
+    "chrome": ["chrome", "google chrome"],
+    "vscode": ["vscode", "visual studio code"],
+    "terminal": ["terminal", "cmd", "powershell"],
+    "spotify": ["spotify"],
+    "explorer": ["explorer", "file explorer"],
+    "whatsapp": ["whatsapp"]
 }
 
-def normalise(name):
+def normalise(name: str):
     name = name.lower()
-    for j in ALLOW_LIST:
-        if j in name:
-            return j
+    for canonical, patterns in APP_MAP.items():
+        for p in patterns:
+            if p in name:
+                return canonical
     return None
+
 
 def clean_data():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # rebuild clean sessions every run
     cursor.execute("TRUNCATE TABLE app_sessions")
 
     cursor.execute("""
@@ -31,16 +36,14 @@ def clean_data():
     last_ts = None
 
     for app_name, event_type, ts in events:
-        # we ONLY care about focus events
         if event_type.lower() != "open":
             continue
 
-        normalised_name = normalise(app_name)
-        if not normalised_name:
+        app = normalise(app_name)
+        if not app:
             continue
 
-        # if focus switched from one app to another
-        if last_app and normalised_name != last_app:
+        if last_app and app != last_app:
             duration = ts - last_ts
             if duration > 0:
                 cursor.execute(
@@ -52,13 +55,24 @@ def clean_data():
                     (last_app, last_ts, ts, duration)
                 )
 
-        # update current focus
-        last_app = normalised_name
+        last_app = app
         last_ts = ts
+
+    # flush last session
+    if last_app and last_ts:
+        cursor.execute(
+            """
+            INSERT INTO app_sessions
+            (app_name, opened_at, closed_at, duration)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (last_app, last_ts, last_ts + 1, 1)
+        )
 
     conn.commit()
     cursor.close()
     conn.close()
+
 
 if __name__ == "__main__":
     clean_data()
