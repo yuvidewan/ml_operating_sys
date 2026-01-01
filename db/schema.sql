@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS app_sessions (
     app_name VARCHAR(255) NOT NULL,
     opened_at DOUBLE NOT NULL,
     closed_at DOUBLE,
-    duration DOUBLE
+    duration DOUBLE,
+    opened_dt DATETIME GENERATED ALWAYS AS (FROM_UNIXTIME(opened_at)) STORED
 );
 
