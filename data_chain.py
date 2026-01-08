@@ -4,7 +4,7 @@ from collections import defaultdict
 #could be made dynamic later depending on time of day or other factors
 IDLE_THRESHOLD = 60 # 1 min
 SESSION_THRESHOLD = 10800 # 3 hrs
-OCCURENCE_THRESHOLD = 7 
+OCCURENCE_THRESHOLD = 5 
 CONFIDENCE_GAP = 0.15
 
 def buildchain():
@@ -119,6 +119,7 @@ def build_2d_transition_probs(transitions):
     
     return probs,totals
 
+# need to debug
 def inference_layer(probs_1d, probs_2d, totals_1d, totals_2d):
     """
     Returns a predictor function that decides:
@@ -132,8 +133,8 @@ def inference_layer(probs_1d, probs_2d, totals_1d, totals_2d):
         if total_2d < OCCURENCE_THRESHOLD:
             # fallback to 1D
             candidates_1d = [
-                (curr, p)
-                for (p_prev, curr), p in probs_1d.items()
+                (curr, prob)  # ← Changed from 'p' to 'prob'
+                for (p_prev, curr), prob in probs_1d.items()
                 if p_prev == prev
             ]
             if not candidates_1d:
@@ -142,8 +143,8 @@ def inference_layer(probs_1d, probs_2d, totals_1d, totals_2d):
 
         # ---------- STEP 2: collect 2D candidates ----------
         candidates_2d = [
-            (curr, p)
-            for (pp, p, curr), p in probs_2d.items()
+            (curr, prob)  # ← Changed from 'p' to 'prob'
+            for (pp, p, curr), prob in probs_2d.items()
             if pp == prev_prev and p == prev
         ]
 
@@ -164,8 +165,8 @@ def inference_layer(probs_1d, probs_2d, totals_1d, totals_2d):
         if (best_prob - second_prob) < CONFIDENCE_GAP:
             # fallback to 1D
             candidates_1d = [
-                (curr, p)
-                for (p_prev, curr), p in probs_1d.items()
+                (curr, prob)  # ← Changed from 'p' to 'prob'
+                for (p_prev, curr), prob in probs_1d.items()
                 if p_prev == prev
             ]
             if not candidates_1d:
@@ -176,7 +177,6 @@ def inference_layer(probs_1d, probs_2d, totals_1d, totals_2d):
         return best_app
 
     return predict
-
         
 
 if __name__ == "__main__":
@@ -194,9 +194,12 @@ if __name__ == "__main__":
     predict = inference_layer(probs_1d=probs_1d,probs_2d=probs_2d,totals_1d=totals_1d,totals_2d=totals_2d)
     # use the last two apps from 2D chain
     #last_prev_prev, last_prev, _, _ = chains_2d[-1]
+            #OR
+    # use real time below later
     last_prev_prev = "spotify"
     last_prev = "chrome"
     result = predict(last_prev_prev, last_prev)
+    # giving none as a result so need to check
     print(f"Predicted next app after ({last_prev_prev}, {last_prev}) → {result}")
 
     # print("\n---PROBABILTIES---")
